@@ -1,5 +1,1 @@
-
-
-variable "name" {
-  
-}
+variable "name" {}

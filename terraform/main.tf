@@ -7,3 +7,4 @@ module "clusters" {
 
   name = each.key
 }
+

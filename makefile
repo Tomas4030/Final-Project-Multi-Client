@@ -1,19 +1,12 @@
-terraform_dir = terraform
-
-.PHONY: init apply-plan
-
-delete:
-	minikube delete --all
-
-init:
-	cd $(terraform_dir); \
+apply:
 	terraform init
+	terraform apply -auto-approve
 
-apply-plan:
-	cd $(terraform_dir); \
-	terraform plan -out=save.plan; \
-	terraform apply save.plan
+destroy:
+	terraform destroy -auto-approve
 
+hosts:
+	./scripts/update-hosts.sh $$(terraform output -json domains | jq -r '.[]')
 
-
-
+validate:
+	./scripts/validate.sh
