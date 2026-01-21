@@ -1,15 +1,19 @@
-module "environment" {
-	for_each = local.env_map
+resource "time_sleep" "wait_for_ingress" {
+  depends_on = [minikube_cluster.this]
 
-	source = "./modules/environment"
+  create_duration = "90s" # Tempo para o Nginx Ingress Controller iniciar
+}
 
-	name_prefix            = each.key
-	namespace              = each.value.name
-	domain                 = each.value.domain
-	odoo_image             = var.odoo_image
-	postgres_image         = var.postgres_image
-	postgres_user          = var.postgres_user
-	postgres_password      = var.postgres_password
+module "odoo_stack" {
+  source = "./modules/client"
 
-	depends_on = [minikube_cluster.cluster]
+  # Se isto der erro, verifica o locals.tf
+  for_each = toset(local.current_environments)
+
+  # Estas variáveis TÊM de existir dentro do modules/client/variables.tf
+  client_name = local.current_client
+  environment = each.key
+  
+  # Isto só funciona se o recurso no clusters.tf se chamar "this"
+  depends_on = [time_sleep.wait_for_ingress]
 }

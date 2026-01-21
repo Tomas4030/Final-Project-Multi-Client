@@ -1,31 +1,31 @@
-
-.PHONY: init validate plan apply test run destroy all
+.PHONY: init apply-airbnb apply-nike apply-mcdonalds destroy-all
 
 init:
-	@echo "📦 Initializing Terraform..."
-	terraform init
+	terraform init -upgrade
 
-validate:
-	@echo "🔍 Validating Terraform..."
-	terraform validate
+define deploy_client
+	terraform workspace select $(1) || terraform workspace new $(1)
+	terraform apply -auto-approve
+endef
 
-plan-apply:
-	@echo "⚡ Generating Terraform plan..."
-	terraform plan -out=k8s.plan 
-	terraform apply k8s.plan
+apply-airbnb:
+	$(call deploy_client,airbnb)
 
-test:
-	@echo "🩺 Checking Kubernetes resources..."
-	kubectl get pods -A
-	kubectl get svc -A
-	kubectl get ingress -A
+apply-nike:
+	$(call deploy_client,nike)
 
+apply-mcdonalds:
+	$(call deploy_client,mcdonalds)
 
-run: init validate plan-apply test
-	@echo "✅ SYSTEM ONLINE"
+update-hosts:
+	@echo "Updating /etc/hosts..."
+	@IP=$$(minikube ip -p $$(terraform workspace show)-cluster); \
+	CLIENT=$$(terraform workspace show); \
+	DOMAINS=$$(terraform output -json domains | jq -r '.[]'); \
+	for domain in $$DOMAINS; do \
+		echo "$$IP $$domain" | sudo tee -a /etc/hosts; \
+	done
 
-destroy:
-	@echo "💥 Destroying Terraform resources..."
+delete:
 	terraform destroy -auto-approve
-
-all: run
+	minikube delete -p $$(terraform workspace show)-cluster
